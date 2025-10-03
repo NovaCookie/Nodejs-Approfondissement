@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Socket.io</title>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <h1>Test Socket.io Articles</h1>
+    <div id="articles"></div>
+
+    <script>
+      const socket = io();
+
+      socket.on("connect", () => {
+        console.log("Connecté au serveur");
+      });
+
+      socket.on("article:created", (data) => {
+        console.log("Nouvel article créé:", data);
+        const articlesDiv = document.getElementById("articles");
+        articlesDiv.innerHTML += `<p>Nouvel article: ${data.article.title}</p>`;
+      });
+
+      socket.on("disconnect", () => {
+        console.log("Déconnecté du serveur");
+      });
+    </script>
+  </body>
+</html>
