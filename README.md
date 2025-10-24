@@ -15,6 +15,7 @@ Une API REST complète pour la gestion d'articles avec authentification, temps r
 
 - Node.js
 - MongoDB
+- Postman
 - PM2 (pour la production)
 
 ## Installation
@@ -85,3 +86,4 @@ DELETE /api/articles/:id - Admin seulement
 GET /api/articles/user/:userId/articles - Public
 
 Développé avec Node.js, Express, MongoDB et Socket.io
+
