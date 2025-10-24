@@ -5,48 +5,37 @@ const cors = require("cors");
 const NotFoundError = require("./errors/not-found");
 const userRouter = require("./api/users/users.router");
 const usersController = require("./api/users/users.controller");
-const authMiddleware = require("./middlewares/auth");
-require("./api/articles/articles.schema"); // temporaire
+require("./api/articles/articles.schema");
 const app = express();
 
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Socket.IO - Temps réel
 io.on("connection", (socket) => {
-  /*socket.on("my_event", (data) => {
-    console.log(data);
-  });
-  io.emit("event_from_server", { test: "foo" });*/
+  console.log("Utilisateur connecté via Socket.io");
 
-  //Evenement pour la création d'article
-  console.log("L'utilisateur est connecté via Socket.io");
-
-  socket.on("article:create", (data) => {
-    console.log("Nouvel article créé : ", data);
-
-    io.emit("article:created", data);
-  });
-
-  socket.on("disconect", () => {
-    console.log(" Utilisateur déconnecté de Socket.io");
+  socket.on("disconnect", () => {
+    console.log("Utilisateur déconnecté de Socket.io");
   });
 });
 
+// Middlewares
 app.use((req, res, next) => {
-  req.io = io;
+  req.io = io; // Socket.IO disponible dans les contrôleurs
   next();
 });
 
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/users", authMiddleware, userRouter);
+// Routes
+app.use("/api/users", userRouter);
 app.post("/login", usersController.login);
-
 app.use("/api/articles", require("./api/articles/articles.router"));
-
 app.use("/", express.static("public"));
 
+// Gestion des erreurs
 app.use((req, res, next) => {
   next(new NotFoundError());
 });
@@ -54,11 +43,7 @@ app.use((req, res, next) => {
 app.use((error, req, res, next) => {
   const status = error.status || 500;
   const message = error.message;
-  res.status(status);
-  res.json({
-    status,
-    message,
-  });
+  res.status(status).json({ status, message });
 });
 
 module.exports = {

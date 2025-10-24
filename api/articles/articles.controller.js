@@ -7,22 +7,18 @@ exports.createArticle = async (req, res) => {
     const article = new Article({
       title: req.body.title,
       content: req.body.content,
-      status: req.body.status || "draft", // Utilise l'énumération
-      user: req.user.userId, // L'ID de l'utilisateur connecté
+      status: req.body.status || "draft",
+      user: req.user._id,
     });
 
     await article.save();
 
-    // Socket.io
-    /* if (req.io) {
-    *   req.io.emit("newArticle", article);
-    }*/
-
+    // Socket.io create article
     if (req.io) {
       req.io.emit("article:created", {
         action: "created",
-        article: article,
-        user: req.user.userId,
+        article: await article.populate("user", "name email"),
+        user: { id: req.user._id, name: req.user.name },
       });
     }
 
@@ -38,10 +34,18 @@ exports.updateArticle = async (req, res) => {
     const article = await Article.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
-    });
+    }).populate("user", "name email");
 
     if (!article) {
       return res.status(404).json({ error: "Article non trouvé" });
+    }
+
+    // Socket.io update article
+    if (req.io) {
+      req.io.emit("article:updated", {
+        action: "updated",
+        article: article,
+      });
     }
 
     res.json(article);
@@ -59,6 +63,14 @@ exports.deleteArticle = async (req, res) => {
       return res.status(404).json({ error: "Article non trouvé" });
     }
 
+    // Socket.io delete article
+    if (req.io) {
+      req.io.emit("article:deleted", {
+        action: "deleted",
+        articleId: req.params.id,
+      });
+    }
+
     res.json({ message: "Article supprimé avec succès" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -69,13 +81,25 @@ exports.deleteArticle = async (req, res) => {
 exports.getUserArticles = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.userId).select("-password");
-    const articles = await Article.find({ user: req.params.userId });
 
     if (!user) {
       return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
 
-    res.json({ user, articles });
+    const articles = await Article.find({ user: req.params.userId })
+      .populate("user", "name email role")
+      .select("-__v");
+
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        age: user.age,
+      },
+      articles,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

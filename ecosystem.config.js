@@ -1,6 +1,7 @@
 module.exports = {
   apps: [
     {
+      port: process.env.PORT || 3001,
       name: "app",
       script: "./www/app.js",
       instances: 3,
@@ -10,11 +11,14 @@ module.exports = {
       out_file: "./logs/out.log",
       log_file: "./logs/combined.log",
       time: true,
-      // Configuration de rotation des logs
       log_date_format: "YYYY-MM-DD HH:mm:ss",
       max_size: "10M",
       retain: 5,
       compress: true,
+      watch: false,
+      env: {
+        NODE_ENV: "development",
+      },
       env_production: {
         NODE_ENV: "production",
       },
